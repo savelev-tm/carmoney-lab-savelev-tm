@@ -14,13 +14,13 @@ final class DecisionEngineTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->engine = new DecisionEngine(['approve_max' => 60.0, 'review_max' => 85.0]);
+        $this->engine = new DecisionEngine(['approve_max' => 60.0, 'review_max' => 85.0], 400000);
     }
 
     #[DataProvider('ltvValues')]
     public function testDecidesByLtv(float $ltv, string $expected): void
     {
-        self::assertSame($expected, $this->engine->decide($ltv));
+        self::assertSame($expected, $this->engine->decide($ltv, 96000));
     }
 
     /** @return array<string,array{float,string}> */
@@ -34,5 +34,33 @@ final class DecisionEngineTest extends TestCase
             'сразу за верхней границей' => [85.01, DecisionEngine::REJECT],
             'высокий LTV' => [120.0, DecisionEngine::REJECT],
         ];
+    }
+
+    // REQ-MILEAGE-01: правило пробега (400 000 км включительно — approve,
+    // 400 001 и выше — понижение approve -> review; reject не понижается).
+
+    public function testApprovesLowLtvWithMileageJustBelowThreshold(): void
+    {
+        self::assertSame(DecisionEngine::APPROVE, $this->engine->decide(50.0, 399999));
+    }
+
+    public function testApprovesLowLtvWithMileageExactlyAtThreshold(): void
+    {
+        self::assertSame(DecisionEngine::APPROVE, $this->engine->decide(50.0, 400000));
+    }
+
+    public function testDowngradesApproveToReviewWhenMileageJustAboveThreshold(): void
+    {
+        self::assertSame(DecisionEngine::REVIEW, $this->engine->decide(50.0, 400001));
+    }
+
+    public function testKeepsReviewWhenMileageAboveThresholdAndLtvInReviewBand(): void
+    {
+        self::assertSame(DecisionEngine::REVIEW, $this->engine->decide(75.0, 400001));
+    }
+
+    public function testKeepsRejectWhenMileageAboveThresholdAndLtvAboveReviewMax(): void
+    {
+        self::assertSame(DecisionEngine::REJECT, $this->engine->decide(95.0, 400001));
     }
 }

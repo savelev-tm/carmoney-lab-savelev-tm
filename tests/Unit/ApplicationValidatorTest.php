@@ -79,4 +79,48 @@ final class ApplicationValidatorTest extends TestCase
             );
         }
     }
+
+    // REQ-MILEAGE-02: пустая строка в mileage — 422.
+    // REQ-MILEAGE-03: null/отсутствие ключа mileage — 422 «Пробег от 0 до 500000 км».
+
+    public function testRejectsEmptyStringMileage(): void
+    {
+        try {
+            $this->validator->validate($this->validPayload(['mileage' => '']));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+        }
+    }
+
+    public function testRejectsNullMileage(): void
+    {
+        try {
+            $this->validator->validate($this->validPayload(['mileage' => null]));
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+            self::assertSame(
+                sprintf('Пробег от 0 до %d км', 500000),
+                $exception->errors()['mileage'],
+            );
+        }
+    }
+
+    public function testRejectsMissingMileageKey(): void
+    {
+        $payload = $this->validPayload();
+        unset($payload['mileage']);
+
+        try {
+            $this->validator->validate($payload);
+            self::fail('Ожидали ValidationException');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('mileage', $exception->errors());
+            self::assertSame(
+                sprintf('Пробег от 0 до %d км', 500000),
+                $exception->errors()['mileage'],
+            );
+        }
+    }
 }
