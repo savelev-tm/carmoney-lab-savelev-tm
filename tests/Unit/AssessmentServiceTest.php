@@ -25,7 +25,7 @@ final class AssessmentServiceTest extends TestCase
         $this->service = new AssessmentService(
             new ApplicationValidator($rules, new VinValidator($rules['vin']), $age),
             new LtvCalculator(),
-            new DecisionEngine($rules['ltv']),
+            new DecisionEngine($rules['ltv'], $rules['vehicle']['review_mileage_threshold_km']),
             $age,
         );
     }
