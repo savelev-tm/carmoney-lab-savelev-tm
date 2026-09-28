@@ -35,4 +35,32 @@ final class DecisionEngineTest extends TestCase
             'высокий LTV' => [120.0, DecisionEngine::REJECT],
         ];
     }
+
+    // REQ-MILEAGE-01: правило пробега (400 000 км включительно — approve,
+    // 400 001 и выше — понижение approve -> review; reject не понижается).
+
+    public function testApprovesLowLtvWithMileageJustBelowThreshold(): void
+    {
+        self::assertSame(DecisionEngine::APPROVE, $this->engine->decide(50.0, 399999));
+    }
+
+    public function testApprovesLowLtvWithMileageExactlyAtThreshold(): void
+    {
+        self::assertSame(DecisionEngine::APPROVE, $this->engine->decide(50.0, 400000));
+    }
+
+    public function testDowngradesApproveToReviewWhenMileageJustAboveThreshold(): void
+    {
+        self::assertSame(DecisionEngine::REVIEW, $this->engine->decide(50.0, 400001));
+    }
+
+    public function testKeepsReviewWhenMileageAboveThresholdAndLtvInReviewBand(): void
+    {
+        self::assertSame(DecisionEngine::REVIEW, $this->engine->decide(75.0, 400001));
+    }
+
+    public function testKeepsRejectWhenMileageAboveThresholdAndLtvAboveReviewMax(): void
+    {
+        self::assertSame(DecisionEngine::REJECT, $this->engine->decide(95.0, 400001));
+    }
 }
