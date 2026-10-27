@@ -25,5 +25,31 @@
       "rm -rf*": "deny",
       "git push --force*": "deny"
     }
+  },
+  "agent": {
+    "ask": {
+      "permission": {
+        "bash": {
+          "ast-index stats": "allow",
+          "ast-index --help": "allow",
+          "ast-index search *": "allow",
+          "ast-index class *": "allow",
+          "ast-index symbol *": "allow",
+          "ast-index usages *": "allow",
+          "ast-index callers *": "allow"
+        }
+      }
+    }
+  },
+  "mcp": {
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": true
+    }
   }
 }
